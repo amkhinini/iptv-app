@@ -1,5 +1,7 @@
 package com.ahmed.iptvapp.controller;
 
+import com.ahmed.iptvapp.configuration.PaginationConfig;
+import com.ahmed.iptvapp.dto.PageResponse;
 import com.ahmed.iptvapp.model.Episode;
 import com.ahmed.iptvapp.model.Series;
 import com.ahmed.iptvapp.service.SeriesService;
@@ -16,12 +18,20 @@ import java.util.List;
 public class SeriesController {
 
     private final SeriesService seriesService;
+    private final PaginationConfig paginationConfig;
     
     @GetMapping
-    public ResponseEntity<List<Series>> getAllSeries(@PathVariable String playlistId,
-                                                   Authentication authentication) {
+    public ResponseEntity<PageResponse<Series>> getAllSeries(
+            @PathVariable String playlistId,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size,
+            Authentication authentication) {
+        
         String userId = authentication.getName();
-        return ResponseEntity.ok(seriesService.getSeriesByPlaylist(playlistId, userId));
+        int validPage = page == null || page < 0 ? 0 : page;
+        int validSize = paginationConfig.validatePageSize(size, paginationConfig.getSeriesPageSize());
+        
+        return ResponseEntity.ok(seriesService.getSeriesByPlaylistPaginated(playlistId, userId, validPage, validSize));
     }
     
     @GetMapping("/genres")
@@ -32,26 +42,47 @@ public class SeriesController {
     }
     
     @GetMapping("/genre/{genre}")
-    public ResponseEntity<List<Series>> getSeriesByGenre(@PathVariable String playlistId,
-                                                       @PathVariable String genre,
-                                                       Authentication authentication) {
+    public ResponseEntity<PageResponse<Series>> getSeriesByGenre(
+            @PathVariable String playlistId,
+            @PathVariable String genre,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size,
+            Authentication authentication) {
+        
         String userId = authentication.getName();
-        return ResponseEntity.ok(seriesService.getSeriesByGenre(playlistId, genre, userId));
+        int validPage = page == null || page < 0 ? 0 : page;
+        int validSize = paginationConfig.validatePageSize(size, paginationConfig.getSeriesPageSize());
+        
+        return ResponseEntity.ok(seriesService.getSeriesByGenrePaginated(playlistId, genre, userId, validPage, validSize));
     }
     
     @GetMapping("/favorites")
-    public ResponseEntity<List<Series>> getFavoriteSeries(@PathVariable String playlistId,
-                                                        Authentication authentication) {
+    public ResponseEntity<PageResponse<Series>> getFavoriteSeries(
+            @PathVariable String playlistId,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size,
+            Authentication authentication) {
+        
         String userId = authentication.getName();
-        return ResponseEntity.ok(seriesService.getFavorites(playlistId, userId));
+        int validPage = page == null || page < 0 ? 0 : page;
+        int validSize = paginationConfig.validatePageSize(size, paginationConfig.getSeriesPageSize());
+        
+        return ResponseEntity.ok(seriesService.getFavoritesPaginated(playlistId, userId, validPage, validSize));
     }
     
     @GetMapping("/search")
-    public ResponseEntity<List<Series>> searchSeries(@PathVariable String playlistId,
-                                                   @RequestParam String query,
-                                                   Authentication authentication) {
+    public ResponseEntity<PageResponse<Series>> searchSeries(
+            @PathVariable String playlistId,
+            @RequestParam String query,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size,
+            Authentication authentication) {
+        
         String userId = authentication.getName();
-        return ResponseEntity.ok(seriesService.searchSeries(query, playlistId, userId));
+        int validPage = page == null || page < 0 ? 0 : page;
+        int validSize = paginationConfig.validatePageSize(size, paginationConfig.getSeriesPageSize());
+        
+        return ResponseEntity.ok(seriesService.searchSeriesPaginated(query, playlistId, userId, validPage, validSize));
     }
     
     @GetMapping("/{seriesId}")
