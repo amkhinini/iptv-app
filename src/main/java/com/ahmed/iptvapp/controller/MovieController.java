@@ -1,5 +1,7 @@
 package com.ahmed.iptvapp.controller;
 
+import com.ahmed.iptvapp.configuration.PaginationConfig;
+import com.ahmed.iptvapp.dto.PageResponse;
 import com.ahmed.iptvapp.model.Movie;
 import com.ahmed.iptvapp.service.MovieService;
 import lombok.RequiredArgsConstructor;
@@ -15,12 +17,20 @@ import java.util.List;
 public class MovieController {
 
     private final MovieService movieService;
+    private final PaginationConfig paginationConfig;
     
     @GetMapping
-    public ResponseEntity<List<Movie>> getMovies(@PathVariable String playlistId,
-                                               Authentication authentication) {
+    public ResponseEntity<PageResponse<Movie>> getMovies(
+            @PathVariable String playlistId,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size,
+            Authentication authentication) {
+        
         String userId = authentication.getName();
-        return ResponseEntity.ok(movieService.getMoviesByPlaylist(playlistId, userId));
+        int validPage = page == null || page < 0 ? 0 : page;
+        int validSize = paginationConfig.validatePageSize(size, paginationConfig.getMoviesPageSize());
+        
+        return ResponseEntity.ok(movieService.getMoviesByPlaylistPaginated(playlistId, userId, validPage, validSize));
     }
     
     @GetMapping("/genres")
@@ -31,26 +41,47 @@ public class MovieController {
     }
     
     @GetMapping("/genre/{genre}")
-    public ResponseEntity<List<Movie>> getMoviesByGenre(@PathVariable String playlistId,
-                                                      @PathVariable String genre,
-                                                      Authentication authentication) {
+    public ResponseEntity<PageResponse<Movie>> getMoviesByGenre(
+            @PathVariable String playlistId,
+            @PathVariable String genre,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size,
+            Authentication authentication) {
+        
         String userId = authentication.getName();
-        return ResponseEntity.ok(movieService.getMoviesByGenre(playlistId, genre, userId));
+        int validPage = page == null || page < 0 ? 0 : page;
+        int validSize = paginationConfig.validatePageSize(size, paginationConfig.getMoviesPageSize());
+        
+        return ResponseEntity.ok(movieService.getMoviesByGenrePaginated(playlistId, genre, userId, validPage, validSize));
     }
     
     @GetMapping("/favorites")
-    public ResponseEntity<List<Movie>> getFavoriteMovies(@PathVariable String playlistId,
-                                                       Authentication authentication) {
+    public ResponseEntity<PageResponse<Movie>> getFavoriteMovies(
+            @PathVariable String playlistId,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size,
+            Authentication authentication) {
+        
         String userId = authentication.getName();
-        return ResponseEntity.ok(movieService.getFavorites(playlistId, userId));
+        int validPage = page == null || page < 0 ? 0 : page;
+        int validSize = paginationConfig.validatePageSize(size, paginationConfig.getMoviesPageSize());
+        
+        return ResponseEntity.ok(movieService.getFavoritesPaginated(playlistId, userId, validPage, validSize));
     }
     
     @GetMapping("/search")
-    public ResponseEntity<List<Movie>> searchMovies(@PathVariable String playlistId,
-                                                  @RequestParam String query,
-                                                  Authentication authentication) {
+    public ResponseEntity<PageResponse<Movie>> searchMovies(
+            @PathVariable String playlistId,
+            @RequestParam String query,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size,
+            Authentication authentication) {
+        
         String userId = authentication.getName();
-        return ResponseEntity.ok(movieService.searchMovies(query, playlistId, userId));
+        int validPage = page == null || page < 0 ? 0 : page;
+        int validSize = paginationConfig.validatePageSize(size, paginationConfig.getMoviesPageSize());
+        
+        return ResponseEntity.ok(movieService.searchMoviesPaginated(query, playlistId, userId, validPage, validSize));
     }
     
     @GetMapping("/{movieId}")

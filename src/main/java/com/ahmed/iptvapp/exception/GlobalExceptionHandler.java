@@ -1,6 +1,7 @@
 package com.ahmed.iptvapp.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -103,6 +104,29 @@ public class GlobalExceptionHandler {
         body.put("path", request.getRequestURI());
         
         return new ResponseEntity<>(body, HttpStatus.NOT_FOUND);
+    }
+    
+    /**
+     * Handler for rate limit exceeded exceptions
+     */
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<Object> handleRateLimitExceededException(
+            RateLimitExceededException ex, 
+            HttpServletRequest request,
+            HttpServletResponse response) {
+        
+        // Add Retry-After header to indicate when the client can retry
+        response.setHeader("Retry-After", String.valueOf(ex.getRetryAfterSeconds()));
+        
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", HttpStatus.TOO_MANY_REQUESTS.value());
+        body.put("error", "Too Many Requests");
+        body.put("message", ex.getMessage());
+        body.put("retryAfter", ex.getRetryAfterSeconds());
+        body.put("path", request.getRequestURI());
+        
+        return new ResponseEntity<>(body, HttpStatus.TOO_MANY_REQUESTS);
     }
     
     @ExceptionHandler(Exception.class)

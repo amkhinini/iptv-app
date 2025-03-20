@@ -58,26 +58,6 @@ public class M3UParserService {
         parseContent(playlist, content.toString());
         return playlist;
     }
-    
-    /**
-     * Parse M3U content from an uploaded file
-     */
-    public Playlist parseFromFile(MultipartFile file, String userId) throws IOException {
-        String content = new String(file.getBytes());
-        
-        Playlist playlist = Playlist.builder()
-                .name("Playlist from uploaded file")
-                .userId(userId)
-                .content(content)
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
-                .lastRefreshed(LocalDateTime.now())
-                .active(true)
-                .build();
-        
-        parseContent(playlist, content);
-        return playlist;
-    }
 
     /**
      * Parse the actual M3U content and populate the playlist with channels, movies, and series

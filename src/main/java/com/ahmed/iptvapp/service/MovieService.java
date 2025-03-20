@@ -1,5 +1,6 @@
 package com.ahmed.iptvapp.service;
 
+import com.ahmed.iptvapp.dto.PageResponse;
 import com.ahmed.iptvapp.model.Movie;
 import com.ahmed.iptvapp.repository.MovieRepository;
 import com.ahmed.iptvapp.repository.PlaylistRepository;
@@ -35,6 +36,23 @@ public class MovieService {
     }
     
     /**
+     * Get all movies for a playlist with pagination
+     */
+    public PageResponse<Movie> getMoviesByPlaylistPaginated(String playlistId, String userId, int page, int size) {
+        // Verify the user owns the playlist
+        boolean hasAccess = playlistRepository.findById(playlistId)
+                .map(playlist -> playlist.getUserId().equals(userId))
+                .orElse(false);
+        
+        if (!hasAccess) {
+            throw new RuntimeException("Access denied to playlist");
+        }
+        
+        List<Movie> allMovies = movieRepository.findByPlaylistId(playlistId);
+        return paginateMovieList(allMovies, page, size);
+    }
+    
+    /**
      * Get movies by genre
      */
     public List<Movie> getMoviesByGenre(String playlistId, String genre, String userId) {
@@ -48,6 +66,23 @@ public class MovieService {
         }
         
         return movieRepository.findByGenre(genre);
+    }
+    
+    /**
+     * Get movies by genre with pagination
+     */
+    public PageResponse<Movie> getMoviesByGenrePaginated(String playlistId, String genre, String userId, int page, int size) {
+        // Verify the user owns the playlist
+        boolean hasAccess = playlistRepository.findById(playlistId)
+                .map(playlist -> playlist.getUserId().equals(userId))
+                .orElse(false);
+        
+        if (!hasAccess) {
+            throw new RuntimeException("Access denied to playlist");
+        }
+        
+        List<Movie> allMoviesByGenre = movieRepository.findByGenre(genre);
+        return paginateMovieList(allMoviesByGenre, page, size);
     }
     
     /**
@@ -92,6 +127,23 @@ public class MovieService {
     }
     
     /**
+     * Get all favorite movies with pagination
+     */
+    public PageResponse<Movie> getFavoritesPaginated(String playlistId, String userId, int page, int size) {
+        // Verify the user owns the playlist
+        boolean hasAccess = playlistRepository.findById(playlistId)
+                .map(playlist -> playlist.getUserId().equals(userId))
+                .orElse(false);
+        
+        if (!hasAccess) {
+            throw new RuntimeException("Access denied to playlist");
+        }
+        
+        List<Movie> favorites = movieRepository.findByPlaylistIdAndFavorite(playlistId, true);
+        return paginateMovieList(favorites, page, size);
+    }
+    
+    /**
      * Search for movies by title
      */
     public List<Movie> searchMovies(String query, String playlistId, String userId) {
@@ -105,6 +157,23 @@ public class MovieService {
         }
         
         return movieRepository.findByTitleContainingIgnoreCase(query);
+    }
+    
+    /**
+     * Search for movies by title with pagination
+     */
+    public PageResponse<Movie> searchMoviesPaginated(String query, String playlistId, String userId, int page, int size) {
+        // Verify the user owns the playlist
+        boolean hasAccess = playlistRepository.findById(playlistId)
+                .map(playlist -> playlist.getUserId().equals(userId))
+                .orElse(false);
+        
+        if (!hasAccess) {
+            throw new RuntimeException("Access denied to playlist");
+        }
+        
+        List<Movie> searchResults = movieRepository.findByTitleContainingIgnoreCase(query);
+        return paginateMovieList(searchResults, page, size);
     }
     
     /**
@@ -125,5 +194,20 @@ public class MovieService {
                 .distinct()
                 .sorted()
                 .toList();
+    }
+    
+    /**
+     * Helper method to paginate a list of movies
+     */
+    private PageResponse<Movie> paginateMovieList(List<Movie> movieList, int page, int size) {
+        int totalElements = movieList.size();
+        
+        // Avoid overflow
+        int fromIndex = Math.min(page * size, totalElements);
+        int toIndex = Math.min(fromIndex + size, totalElements);
+        
+        List<Movie> paginatedContent = movieList.subList(fromIndex, toIndex);
+        
+        return PageResponse.of(paginatedContent, page, size, totalElements);
     }
 }

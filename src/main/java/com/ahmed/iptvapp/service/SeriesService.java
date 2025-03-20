@@ -1,5 +1,6 @@
 package com.ahmed.iptvapp.service;
 
+import com.ahmed.iptvapp.dto.PageResponse;
 import com.ahmed.iptvapp.model.Episode;
 import com.ahmed.iptvapp.model.Series;
 import com.ahmed.iptvapp.repository.PlaylistRepository;
@@ -36,6 +37,23 @@ public class SeriesService {
     }
     
     /**
+     * Get all series for a playlist with pagination
+     */
+    public PageResponse<Series> getSeriesByPlaylistPaginated(String playlistId, String userId, int page, int size) {
+        // Verify the user owns the playlist
+        boolean hasAccess = playlistRepository.findById(playlistId)
+                .map(playlist -> playlist.getUserId().equals(userId))
+                .orElse(false);
+        
+        if (!hasAccess) {
+            throw new RuntimeException("Access denied to playlist");
+        }
+        
+        List<Series> allSeries = seriesRepository.findByPlaylistId(playlistId);
+        return paginateSeriesList(allSeries, page, size);
+    }
+    
+    /**
      * Get series by genre
      */
     public List<Series> getSeriesByGenre(String playlistId, String genre, String userId) {
@@ -49,6 +67,23 @@ public class SeriesService {
         }
         
         return seriesRepository.findByGenre(genre);
+    }
+    
+    /**
+     * Get series by genre with pagination
+     */
+    public PageResponse<Series> getSeriesByGenrePaginated(String playlistId, String genre, String userId, int page, int size) {
+        // Verify the user owns the playlist
+        boolean hasAccess = playlistRepository.findById(playlistId)
+                .map(playlist -> playlist.getUserId().equals(userId))
+                .orElse(false);
+        
+        if (!hasAccess) {
+            throw new RuntimeException("Access denied to playlist");
+        }
+        
+        List<Series> allSeriesByGenre = seriesRepository.findByGenre(genre);
+        return paginateSeriesList(allSeriesByGenre, page, size);
     }
     
     /**
@@ -93,6 +128,23 @@ public class SeriesService {
     }
     
     /**
+     * Get all favorite series with pagination
+     */
+    public PageResponse<Series> getFavoritesPaginated(String playlistId, String userId, int page, int size) {
+        // Verify the user owns the playlist
+        boolean hasAccess = playlistRepository.findById(playlistId)
+                .map(playlist -> playlist.getUserId().equals(userId))
+                .orElse(false);
+        
+        if (!hasAccess) {
+            throw new RuntimeException("Access denied to playlist");
+        }
+        
+        List<Series> favorites = seriesRepository.findByPlaylistIdAndFavorite(playlistId, true);
+        return paginateSeriesList(favorites, page, size);
+    }
+    
+    /**
      * Search for series by title
      */
     public List<Series> searchSeries(String query, String playlistId, String userId) {
@@ -106,6 +158,23 @@ public class SeriesService {
         }
         
         return seriesRepository.findByTitleContainingIgnoreCase(query);
+    }
+    
+    /**
+     * Search for series by title with pagination
+     */
+    public PageResponse<Series> searchSeriesPaginated(String query, String playlistId, String userId, int page, int size) {
+        // Verify the user owns the playlist
+        boolean hasAccess = playlistRepository.findById(playlistId)
+                .map(playlist -> playlist.getUserId().equals(userId))
+                .orElse(false);
+        
+        if (!hasAccess) {
+            throw new RuntimeException("Access denied to playlist");
+        }
+        
+        List<Series> searchResults = seriesRepository.findByTitleContainingIgnoreCase(query);
+        return paginateSeriesList(searchResults, page, size);
     }
     
     /**
@@ -175,5 +244,20 @@ public class SeriesService {
                 .distinct()
                 .sorted()
                 .toList();
+    }
+    
+    /**
+     * Helper method to paginate a list of series
+     */
+    private PageResponse<Series> paginateSeriesList(List<Series> seriesList, int page, int size) {
+        int totalElements = seriesList.size();
+        
+        // Avoid overflow
+        int fromIndex = Math.min(page * size, totalElements);
+        int toIndex = Math.min(fromIndex + size, totalElements);
+        
+        List<Series> paginatedContent = seriesList.subList(fromIndex, toIndex);
+        
+        return PageResponse.of(paginatedContent, page, size, totalElements);
     }
 }
